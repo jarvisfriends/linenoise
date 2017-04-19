@@ -66,7 +66,7 @@ void linenoiseClearScreen(void);
 void linenoiseSetMultiLine(int ml);
 void linenoisePrintKeyCodes(void);
 
-void LinenoiseRemotePrint(const char *line);
+void linenoiseRemoteRefreshLine();
 
 #ifdef __cplusplus
 }

@@ -115,7 +115,6 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <fcntl.h>              /* Obtain O_* constant definitions */
 #include "linenoise.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
@@ -762,20 +761,16 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     refreshLine(l);
 }
 
-void LinenoiseRemotePrint(const char *line)
+void linenoiseRemoteRefreshLine()
 {
-    printf("\r%s", line);
-
     if (!ctrl_pipe_created)
     {
+        /* linenoiseEdit must not have run yet so nothing will need refreshing */
         return;
     }
-    int ctrl_pipe_wd = ctrl_pipe_fd[1];
-
-    char buf[1];
-    buf[0] = 18; // ctrl-r;
-
-    write(ctrl_pipe_wd, buf, 1);
+    int ctrl_pipe_write_fd = ctrl_pipe_fd[1];
+    char buf[1] = {18}; //ctrl-r;
+    write(ctrl_pipe_write_fd, buf, 1);
 }
 
 /* This function is the core of the line editing capability of linenoise.
@@ -793,7 +788,6 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
     if (!ctrl_pipe_created)
     {
         int rc = pipe(ctrl_pipe_fd);
-        /*int rc = pipe2(ctrl_pipe_fd, O_CLOEXEC);*/
         if (rc)
         {
             fprintf(stderr, "Problem creating pipe in linenoise: %s\n", strerror(errno));
@@ -801,7 +795,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
         }
         ctrl_pipe_created = 1;
     }
-    int ctrl_pipe_rd = ctrl_pipe_fd[0];
+    int ctrl_pipe_read_fd = ctrl_pipe_fd[0];
 
     /* Populate the linenoise state that we pass to functions implementing
      * specific editing functionalities. */
@@ -832,19 +826,14 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
         char seq[3];
 
         fd_set rfds;
-        struct timeval tv;
         int retval;
 
         FD_ZERO(&rfds);
         FD_SET(l.ifd, &rfds);
-        FD_SET(ctrl_pipe_rd, &rfds);
-        int nfds = (l.ifd > ctrl_pipe_rd) ? l.ifd+1 : ctrl_pipe_rd+1;
+        FD_SET(ctrl_pipe_read_fd, &rfds);
+        int nfds = (l.ifd > ctrl_pipe_read_fd) ? l.ifd+1 : ctrl_pipe_read_fd+1; //compute 1+(the greater fd) for select
 
-        /* Wait up to five seconds. */
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
-
-        retval = select(nfds, &rfds, NULL, NULL, &tv);
+        retval = select(nfds, &rfds, NULL, NULL, NULL);
         if (retval == -1)
         {
             fprintf(stderr, "Problem with select in linenoise\n");
@@ -856,9 +845,9 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             {
                 nread = read(l.ifd,&c,1);
             }
-            else if (FD_ISSET(ctrl_pipe_rd, &rfds))
+            else if (FD_ISSET(ctrl_pipe_read_fd, &rfds))
             {
-                nread = read(ctrl_pipe_rd,&c,1);
+                nread = read(ctrl_pipe_read_fd,&c,1);
             }
             else
             {
