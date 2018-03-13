@@ -132,6 +132,9 @@ static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
 static char **history = NULL;
 
+static int ctrl_pipe_created = 0;
+static int ctrl_pipe_fd[2] = {0, 0};
+
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
@@ -165,6 +168,7 @@ enum KEY_ACTION{
 	ENTER = 13,         /* Enter */
 	CTRL_N = 14,        /* Ctrl-n */
 	CTRL_P = 16,        /* Ctrl-p */
+	CTRL_R = 18,        /* Ctrl-r */
 	CTRL_T = 20,        /* Ctrl-t */
 	CTRL_U = 21,        /* Ctrl+u */
 	CTRL_W = 23,        /* Ctrl+w */
@@ -759,6 +763,18 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     refreshLine(l);
 }
 
+void linenoiseRemoteRefreshLine()
+{
+    if (!ctrl_pipe_created)
+    {
+        /* linenoiseEdit must not have run yet so nothing will need refreshing */
+        return;
+    }
+    int ctrl_pipe_write_fd = ctrl_pipe_fd[1];
+    char buf[1] = {18}; //ctrl-r;
+    write(ctrl_pipe_write_fd, buf, 1);
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -770,6 +786,18 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
 static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, const char *prompt)
 {
     struct linenoiseState l;
+
+    if (!ctrl_pipe_created)
+    {
+        int rc = pipe(ctrl_pipe_fd);
+        if (rc)
+        {
+            fprintf(stderr, "Problem creating pipe in linenoise: %s\n", strerror(errno));
+            exit(errno);
+        }
+        ctrl_pipe_created = 1;
+    }
+    int ctrl_pipe_read_fd = ctrl_pipe_fd[0];
 
     /* Populate the linenoise state that we pass to functions implementing
      * specific editing functionalities. */
@@ -796,10 +824,44 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
     if (write(l.ofd,prompt,l.plen) == -1) return -1;
     while(1) {
         char c;
-        int nread;
+        int nread = 0;
         char seq[3];
 
-        nread = read(l.ifd,&c,1);
+        fd_set rfds;
+        int retval;
+
+        FD_ZERO(&rfds);
+        FD_SET(l.ifd, &rfds);
+        FD_SET(ctrl_pipe_read_fd, &rfds);
+        int nfds = (l.ifd > ctrl_pipe_read_fd) ? l.ifd+1 : ctrl_pipe_read_fd+1; //compute 1+(the greater fd) for select
+
+        retval = select(nfds, &rfds, NULL, NULL, NULL);
+        if (retval == -1)
+        {
+            fprintf(stderr, "Problem with select in linenoise\n");
+            continue;
+        }
+        else if (retval)
+        {
+            if (FD_ISSET(l.ifd, &rfds))
+            {
+                nread = read(l.ifd,&c,1);
+            }
+            else if (FD_ISSET(ctrl_pipe_read_fd, &rfds))
+            {
+                nread = read(ctrl_pipe_read_fd,&c,1);
+            }
+            else
+            {
+                continue;
+            }
+        }
+        else
+        {
+            // timeout, try again :)
+            continue;
+        }
+
         if (nread <= 0) return l.len;
 
         /* Only autocomplete when the callback is set. It returns < 0 when
@@ -951,6 +1013,9 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
             break;
         case CTRL_W: /* ctrl+w, delete previous word */
             linenoiseEditDeletePrevWord(&l);
+            break;
+        case CTRL_R: /* ctrl-r, refresh current line */
+            refreshLine(&l);
             break;
         }
     }
