@@ -22,8 +22,8 @@
 
 /* ========================= VT100 Emulator ========================= */
 
-#define EMU_ROWS 24
-#define EMU_COLS 80
+#define EMU_ROWS 15
+#define EMU_COLS 60
 
 /* Each screen cell stores a complete grapheme cluster and its display width.
  * Wide characters (emoji, CJK) have width=2 and occupy two cells: the main
@@ -538,7 +538,7 @@ static int test_start(const char *test_name, const char *program) {
 
         /* Set test environment variables. */
         setenv("LINENOISE_ASSUME_TTY", "1", 1);
-        setenv("LINENOISE_COLS", "80", 1);
+        setenv("LINENOISE_COLS", "60", 1);
 
         /* Use shell to parse the command line arguments. */
         execl("/bin/sh", "sh", "-c", program, NULL);
@@ -1062,15 +1062,16 @@ static void test_horizontal_scroll(void) {
 
     int prompt_len = strlen("hello> ");  /* 7 chars */
 
-    /* Type text longer than the line (100 chars). The display should scroll
-     * horizontally to keep the cursor visible. */
+    /* Type text longer than the line (70 chars). The display should scroll
+     * horizontally to keep the cursor visible.
+     * prompt(7) + 70 = 77 > 60, causes scrolling. */
     send_keys("aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee"
-              "ffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjj");  /* 100 chars */
+              "ffffffffffffffffffff");  /* 70 chars: 50 + 20 */
 
     /* The right side of the text should be visible (scrolled left).
      * Cursor should be at the right edge. */
-    assert_cursor(0, 79);  /* At last column */
-    assert_row_contains(0, "jjjjjjjjjj");  /* The end should be visible */
+    assert_cursor(0, 59);  /* At last column (60-col terminal) */
+    assert_row_contains(0, "ffffffffffffffffffff");  /* The end should be visible */
 
     /* Move cursor to beginning - text should scroll to show start. */
     send_keys(KEY_CTRL_A);
@@ -1079,15 +1080,15 @@ static void test_horizontal_scroll(void) {
 
     /* Move cursor to end - text should scroll back. */
     send_keys(KEY_CTRL_E);
-    assert_cursor(0, 79);
-    assert_row_contains(0, "jjjjjjjjjj");  /* End visible again */
+    assert_cursor(0, 59);
+    assert_row_contains(0, "ffffffffffffffffffff");  /* End visible again */
 
     /* Delete some chars from the end and verify left portion reappears. */
-    for (int i = 0; i < 30; i++) send_keys(KEY_BACKSPACE);  /* Delete 30 chars */
+    for (int i = 0; i < 20; i++) send_keys(KEY_BACKSPACE);  /* Delete 20 chars */
 
-    /* Now 70 chars remain, which fits: prompt(7) + 70 = 77 < 80 */
+    /* Now 50 chars remain, which fits: prompt(7) + 50 = 57 < 60 */
     assert_row_contains(0, "hello> aaaaaaaaaa");  /* Start should be visible */
-    assert_row_contains(0, "ggggggggg");  /* And most of the text */
+    assert_row_contains(0, "eeeeeeeeee");  /* And most of the text */
 
     test_end();
 }
@@ -1100,7 +1101,7 @@ static void test_horizontal_scroll_utf8(void) {
     /* Type text with emojis that fills most of the line.
      * Each emoji is 4 bytes but 2 columns.
      * Type: "START" (5 cols) + 20 emojis (40 cols) + "END" (3 cols) = 48 cols.
-     * With prompt (7 cols), total = 55 cols, fits on one line. */
+     * With prompt (7 cols), total = 55 cols, fits in 60-col terminal. */
     send_keys("START");
     /* Send 20 emojis in one batch. */
     send_keys("\xf0\x9f\x8e\x89\xf0\x9f\x8e\x89\xf0\x9f\x8e\x89\xf0\x9f\x8e\x89\xf0\x9f\x8e\x89"
@@ -1129,10 +1130,10 @@ static void test_horizontal_scroll_utf8(void) {
 static void test_multiline_wrap(void) {
     if (test_start("Multiline Wrap", "./linenoise-example --multiline") == -1) return;
 
-    /* Type a line longer than 80 cols to force wrapping.
-     * Prompt is 7 chars ("hello> "), so we need 74+ chars to wrap. */
+    /* Type a line longer than 60 cols to force wrapping.
+     * Prompt is 7 chars ("hello> "), so we need 54+ chars to wrap. */
     send_keys("aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee"
-              "ffffffffffgggggggggghhhhhhhhhhiiiiiiiiii");  /* 90 chars */
+              "ffffffffff");  /* 60 chars */
 
     /* In multiline mode, full content should be displayed across rows.
      * Just verify the content is there (not clipped like single-line mode). */
@@ -1144,9 +1145,9 @@ static void test_multiline_wrap(void) {
 static void test_multiline_cursor_movement(void) {
     if (test_start("Multiline Cursor Movement", "./linenoise-example --multiline") == -1) return;
 
-    /* Type text that wraps. */
+    /* Type text that wraps (60 chars wraps on 60-col terminal). */
     send_keys("aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee"
-              "ffffffffffgggggggggghhhhhhhhhhiiiiiiiiii");  /* 90 chars */
+              "ffffffffff");  /* 60 chars */
 
     /* Move to beginning (Ctrl-A). */
     send_keys(KEY_CTRL_A);
@@ -1191,9 +1192,9 @@ static void test_multiline_history(void) {
     if (test_start("Multiline History Navigation", "./linenoise-example --multiline") == -1) return;
 
     /* Type a long line that wraps to 2 rows.
-     * Prompt is 7 chars ("hello> "), so we need 74+ chars to wrap. */
-    send_keys("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    /* This is 88 chars, with 7 char prompt = 95 cols, wraps to 2 rows on 80-col terminal. */
+     * Prompt is 7 chars ("hello> "), so we need 54+ chars to wrap on 60-col terminal. */
+    send_keys("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    /* This is 64 chars, with 7 char prompt = 71 cols, wraps to 2 rows on 60-col terminal. */
 
     /* Press Enter to commit to history. */
     send_keys(KEY_ENTER);
