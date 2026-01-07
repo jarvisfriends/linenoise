@@ -8,7 +8,8 @@ MongoDB, Android and many other projects.
 * Completion.
 * Hints (suggestions at the right of the prompt as you type).
 * Multiplexing mode, with prompt hiding/restoring for asynchronous output.
-* About ~850 lines (comments and spaces excluded) of BSD license source code.
+* UTF-8 support for multi-byte characters and emoji.
+* About ~1100 lines (comments and spaces excluded) of BSD license source code.
 * Only uses a subset of VT100 escapes (ANSI.SYS compatible).
 
 ## Can a line editing library be 20k lines of code?
@@ -341,7 +342,22 @@ example using select(2) and the asynchronous API:
 
 You can test the example by running the example program with the `--async` option.
 
+## Running the tests
+
+Linenoise has a test suite that uses a VT100 terminal emulator to verify correct behavior. The tests cover basic editing, cursor movement, UTF-8 handling, horizontal scrolling, and multiline mode.
+
+To run the tests:
+
+    make test
+
+Or build and run separately:
+
+    make linenoise-test
+    ./linenoise-test
+
+The test harness forks linenoise_example, communicates via pipes, and uses a VT100 emulator to verify screen output and cursor positioning.
+
 ## Related projects
 
-* [Linenoise NG](https://github.com/arangodb/linenoise-ng) is a fork of Linenoise that aims to add more advanced features like UTF-8 support, Windows support and other features. Uses C++ instead of C as development language.
+* [Linenoise NG](https://github.com/arangodb/linenoise-ng) is a fork of Linenoise that aims to add more advanced features like Windows support and other features. Uses C++ instead of C as development language.
 * [Linenoise-swift](https://github.com/andybest/linenoise-swift) is a reimplementation of Linenoise written in Swift.
