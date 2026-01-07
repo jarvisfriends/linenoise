@@ -295,6 +295,18 @@ static void emu_put_char(const char *ch, int chlen) {
         return;
     }
 
+    /* Before overwriting, handle orphaned continuation cells:
+     * 1. If current cell is a continuation (width=0), clear it first
+     * 2. If current cell was a wide char (width=2), clear its continuation */
+    emu_cell_t *cur = &emu_screen[emu_cursor_row][emu_cursor_col];
+    if (cur->width == 0) {
+        /* This was a continuation cell - convert to space. */
+        emu_clear_cell(emu_cursor_row, emu_cursor_col);
+    } else if (cur->width == 2 && emu_cursor_col + 1 < emu_cols) {
+        /* This was a wide char - clear its orphaned continuation. */
+        emu_clear_cell(emu_cursor_row, emu_cursor_col + 1);
+    }
+
     /* Store the character in the current cell. */
     memcpy(emu_screen[emu_cursor_row][emu_cursor_col].ch, ch, chlen);
     emu_screen[emu_cursor_row][emu_cursor_col].ch[chlen] = '\0';
