@@ -734,7 +734,7 @@ static void assert_cell_width(int row, int col, int expected_width) {
 /* ========================= Tests ========================= */
 
 static void test_simple_typing(void) {
-    if (test_start("Simple Typing", "./linenoise_example") == -1) return;
+    if (test_start("Simple Typing", "./linenoise-example") == -1) return;
 
     send_keys("hello");
     assert_row_contains(0, "hello");
@@ -747,7 +747,7 @@ static void test_simple_typing(void) {
 }
 
 static void test_cursor_movement(void) {
-    if (test_start("Cursor Movement", "./linenoise_example") == -1) return;
+    if (test_start("Cursor Movement", "./linenoise-example") == -1) return;
 
     send_keys("abcdef");
     int prompt_len = strlen("hello> ");
@@ -772,7 +772,7 @@ static void test_cursor_movement(void) {
 }
 
 static void test_backspace_delete(void) {
-    if (test_start("Backspace and Delete", "./linenoise_example") == -1) return;
+    if (test_start("Backspace and Delete", "./linenoise-example") == -1) return;
 
     send_keys("hello");
     int prompt_len = strlen("hello> ");
@@ -791,7 +791,7 @@ static void test_backspace_delete(void) {
 }
 
 static void test_utf8_typing(void) {
-    if (test_start("UTF-8 Typing", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Typing", "./linenoise-example") == -1) return;
 
     /* Type some UTF-8 characters. */
     send_keys("caf\xc3\xa9");  /* "café" - é is 2 bytes */
@@ -801,7 +801,7 @@ static void test_utf8_typing(void) {
 }
 
 static void test_utf8_emoji(void) {
-    if (test_start("UTF-8 Emoji", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Emoji", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");
 
@@ -817,7 +817,7 @@ static void test_utf8_emoji(void) {
 }
 
 static void test_utf8_cursor_over_emoji(void) {
-    if (test_start("UTF-8 Cursor Over Emoji", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Cursor Over Emoji", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");
 
@@ -842,7 +842,7 @@ static void test_utf8_cursor_over_emoji(void) {
 }
 
 static void test_utf8_backspace_emoji(void) {
-    if (test_start("UTF-8 Backspace Emoji", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Backspace Emoji", "./linenoise-example") == -1) return;
 
     /* Type: "x🎉y" then backspace should delete 'y', then emoji, then 'x'. */
     send_keys("x\xf0\x9f\x8e\x89" "y");
@@ -865,7 +865,7 @@ static void test_utf8_backspace_emoji(void) {
 }
 
 static void test_utf8_backspace_4byte_only(void) {
-    if (test_start("UTF-8 Backspace 4-byte Only", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Backspace 4-byte Only", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");
 
@@ -888,7 +888,7 @@ static void test_utf8_backspace_4byte_only(void) {
 }
 
 static void test_utf8_grapheme_clusters(void) {
-    if (test_start("UTF-8 Grapheme Clusters", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Grapheme Clusters", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");
 
@@ -954,7 +954,7 @@ static void test_utf8_grapheme_clusters(void) {
 }
 
 static void test_utf8_grapheme_cursor_movement(void) {
-    if (test_start("UTF-8 Grapheme Cursor Movement", "./linenoise_example") == -1) return;
+    if (test_start("UTF-8 Grapheme Cursor Movement", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");
 
@@ -992,7 +992,7 @@ static void test_utf8_grapheme_cursor_movement(void) {
 }
 
 static void test_emulator_grapheme_storage(void) {
-    if (test_start("Emulator Grapheme Storage", "./linenoise_example") == -1) return;
+    if (test_start("Emulator Grapheme Storage", "./linenoise-example") == -1) return;
     emu_debug = 1;  /* Enable debug output */
 
     int prompt_len = strlen("hello> ");
@@ -1029,7 +1029,7 @@ static void test_emulator_grapheme_storage(void) {
 }
 
 static void test_ctrl_w_delete_word(void) {
-    if (test_start("Ctrl-W Delete Word", "./linenoise_example") == -1) return;
+    if (test_start("Ctrl-W Delete Word", "./linenoise-example") == -1) return;
 
     send_keys("hello world");
     send_keys(KEY_CTRL_W);  /* Delete "world" */
@@ -1042,7 +1042,7 @@ static void test_ctrl_w_delete_word(void) {
 }
 
 static void test_ctrl_u_delete_line(void) {
-    if (test_start("Ctrl-U Delete Line", "./linenoise_example") == -1) return;
+    if (test_start("Ctrl-U Delete Line", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");
 
@@ -1058,7 +1058,7 @@ static void test_ctrl_u_delete_line(void) {
 }
 
 static void test_horizontal_scroll(void) {
-    if (test_start("Horizontal Scroll", "./linenoise_example") == -1) return;
+    if (test_start("Horizontal Scroll", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");  /* 7 chars */
 
@@ -1093,7 +1093,7 @@ static void test_horizontal_scroll(void) {
 }
 
 static void test_horizontal_scroll_utf8(void) {
-    if (test_start("Horizontal Scroll UTF-8", "./linenoise_example") == -1) return;
+    if (test_start("Horizontal Scroll UTF-8", "./linenoise-example") == -1) return;
 
     int prompt_len = strlen("hello> ");  /* 7 cols */
 
@@ -1127,7 +1127,7 @@ static void test_horizontal_scroll_utf8(void) {
 /* ========================= Multi-line Mode Tests ========================= */
 
 static void test_multiline_wrap(void) {
-    if (test_start("Multiline Wrap", "./linenoise_example --multiline") == -1) return;
+    if (test_start("Multiline Wrap", "./linenoise-example --multiline") == -1) return;
 
     /* Type a line longer than 80 cols to force wrapping.
      * Prompt is 7 chars ("hello> "), so we need 74+ chars to wrap. */
@@ -1142,7 +1142,7 @@ static void test_multiline_wrap(void) {
 }
 
 static void test_multiline_cursor_movement(void) {
-    if (test_start("Multiline Cursor Movement", "./linenoise_example --multiline") == -1) return;
+    if (test_start("Multiline Cursor Movement", "./linenoise-example --multiline") == -1) return;
 
     /* Type text that wraps. */
     send_keys("aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeee"
@@ -1164,7 +1164,7 @@ static void test_multiline_cursor_movement(void) {
 }
 
 static void test_multiline_utf8(void) {
-    if (test_start("Multiline UTF-8", "./linenoise_example --multiline") == -1) return;
+    if (test_start("Multiline UTF-8", "./linenoise-example --multiline") == -1) return;
 
     /* Type text with emoji. Each emoji is 4 bytes, 2 cols. */
     send_keys("Test ");
@@ -1188,7 +1188,7 @@ static void test_multiline_utf8(void) {
 }
 
 static void test_multiline_history(void) {
-    if (test_start("Multiline History Navigation", "./linenoise_example --multiline") == -1) return;
+    if (test_start("Multiline History Navigation", "./linenoise-example --multiline") == -1) return;
 
     /* Type a long line that wraps to 2 rows.
      * Prompt is 7 chars ("hello> "), so we need 74+ chars to wrap. */
