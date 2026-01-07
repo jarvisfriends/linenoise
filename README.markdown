@@ -344,18 +344,35 @@ You can test the example by running the example program with the `--async` optio
 
 ## Running the tests
 
-Linenoise has a test suite that uses a VT100 terminal emulator to verify correct behavior. The tests cover basic editing, cursor movement, UTF-8 handling, horizontal scrolling, and multiline mode.
-
-To run the tests:
+To run the test suite:
 
     make test
 
-Or build and run separately:
+The tests will display a virtual terminal showing linenoise output in real-time, making it easy to see what's being tested and debug any failures.
 
-    make linenoise-test
-    ./linenoise-test
+### What the tests cover
 
-The test harness forks linenoise_example, communicates via pipes, and uses a VT100 emulator to verify screen output and cursor positioning.
+The test suite verifies:
+
+* Basic typing and cursor movement (left, right, home, end)
+* Backspace and delete operations
+* UTF-8 multi-byte characters (accented letters, CJK)
+* Emoji and grapheme clusters (skin tones, ZWJ sequences like flags)
+* Horizontal scrolling for long lines
+* Multiline mode editing and navigation
+* History navigation in multiline mode
+* Word and line deletion (Ctrl-W, Ctrl-U)
+
+### How the test harness works
+
+The test program (`linenoise-test.c`) implements a VT100 terminal emulator that captures and verifies linenoise output:
+
+1. **Fork and pipes**: The test harness forks `linenoise-example`, connecting to it via pipes. The child process sees `LINENOISE_ASSUME_TTY=1` to enable terminal mode despite not having a real TTY.
+2. **VT100 emulator**: A minimal VT100 emulator parses escape sequences (cursor movement, screen clearing, etc.) and maintains a virtual screen buffer. Each cell stores a complete UTF-8 grapheme cluster and its display width.
+3. **Visual rendering**: After each operation, the virtual screen is rendered to your real terminal with a border, so you can watch the test execute and see exactly what linenoise is displaying.
+4. **Assertions**: Tests verify screen contents and cursor position against expected values.
+
+This approach tests linenoise as users actually experience it, catching rendering bugs that unit tests would miss.
 
 ## Related projects
 
