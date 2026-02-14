@@ -1239,6 +1239,21 @@ static void test_multiline_history(void) {
     test_end();
 }
 
+static void test_tab_no_completions(void) {
+    if (test_start("TAB With No Completions", "./linenoise-example") == -1) return;
+
+    /* Type "foo" then TAB: no completions for "foo", TAB should be consumed. */
+    send_keys("foo");
+    send_keys("\t");
+
+    /* Type more text: should appear right after "foo" with no TAB inserted. */
+    send_keys("bar");
+    assert_screen_row(0, "hello> foobar");
+    assert_cursor(0, strlen("hello> foobar"));
+
+    test_end();
+}
+
 /* ========================= Main ========================= */
 
 int main(int argc, char **argv) {
@@ -1267,6 +1282,7 @@ int main(int argc, char **argv) {
     test_emulator_grapheme_storage();
     test_ctrl_w_delete_word();
     test_ctrl_u_delete_line();
+    test_tab_no_completions();
 
     /* Horizontal scrolling tests (single-line mode). */
     test_horizontal_scroll();

@@ -723,6 +723,7 @@ static int completeLine(struct linenoiseState *ls, int keypressed) {
     if (lc.len == 0) {
         linenoiseBeep();
         ls->in_completion = 0;
+        c = 0;
     } else {
         switch(c) {
             case 9: /* tab */
