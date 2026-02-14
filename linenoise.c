@@ -1329,15 +1329,14 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
         return NULL;
     }
 
-    /* Only autocomplete when the callback is set. It returns < 0 when
-     * there was an error reading from fd. Otherwise it will return the
-     * character that should be handled next. */
-    if ((l->in_completion || c == 9) && completionCallback != NULL) {
-        c = completeLine(l,c);
-        /* Return on errors */
-        if (c < 0) return NULL;
+    /* Only autocomplete when the callback is set. completeLine()
+     * returns the character to be handled next, or zero when the
+     * key was consumed to navigate completions. */
+    if ((l->in_completion || c == 9 /* TAB */) && completionCallback != NULL) {
+        int retval = completeLine(l,c);
         /* Read next character when 0 */
-        if (c == 0) return linenoiseEditMore;
+        if (retval == 0) return linenoiseEditMore;
+        c = retval;
     }
 
     switch(c) {
