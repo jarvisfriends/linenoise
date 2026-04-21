@@ -1254,6 +1254,33 @@ static void test_tab_no_completions(void) {
     test_end();
 }
 
+static void test_ansi_prompt_width(void) {
+    /* The --ansi-prompt option produces "\x1b[31mred\x1b[32mgreen\x1b[0m> ":
+     * visible glyphs are "redgreen> " (10 columns), but the raw string is
+     * 23 bytes. If utf8StrWidth() counts the escape bytes, the cursor
+     * column computed during refresh drifts well past the true end of
+     * the text. */
+    if (test_start("ANSI Prompt Zero Width", "./linenoise-example --ansi-prompt") == -1) return;
+
+    int plen = strlen("redgreen> ");  /* 10 visible columns */
+
+    send_keys("abc");
+    /* The emulator strips ANSI, so the visible row is "redgreen> abc". */
+    assert_screen_row(0, "redgreen> abc");
+    assert_cursor(0, plen + 3);
+
+    /* Move left twice, then type another character: cursor must land at the
+     * correct display column. Previous bug would offset it by the escape
+     * byte count. */
+    send_keys("\x1b[D\x1b[D");   /* left, left */
+    assert_cursor(0, plen + 1);   /* between 'a' and 'b' */
+    send_keys("X");
+    assert_screen_row(0, "redgreen> aXbc");
+    assert_cursor(0, plen + 2);   /* right after the inserted 'X' */
+
+    test_end();
+}
+
 /* ========================= Main ========================= */
 
 int main(int argc, char **argv) {
@@ -1283,6 +1310,7 @@ int main(int argc, char **argv) {
     test_ctrl_w_delete_word();
     test_ctrl_u_delete_line();
     test_tab_no_completions();
+    test_ansi_prompt_width();
 
     /* Horizontal scrolling tests (single-line mode). */
     test_horizontal_scroll();
